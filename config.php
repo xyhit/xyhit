@@ -12,7 +12,7 @@ namespace LaneWeChat;
 //版本号
 define('LANEWECHAT_VERSION', '1.4');
 define('LANEWECHAT_VERSION_DATE', '2014-11-05');
-
+//
 /*
  * 服务器配置，详情请参考@link http://mp.weixin.qq.com/wiki/index.php?title=接入指南
  */
