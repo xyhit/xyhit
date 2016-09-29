@@ -137,8 +137,12 @@ class WechatRequest{
 		$id = $request['fromusername'];
 		$recv_send = "R";
 		$content = $request['content'];
-		include_once __DIR__.'/../conn.php';
+		include_once __DIR__.'/../sql/sql.php';
 		$time = date("Y-m-d H:i:s", time());
+        insert('think_formalmsg', array(
+            'userid'=,
+
+        ));
 		mysql_query("insert into formalmsg(id, recv_send, time, content) values('$id', '$recv_send', '$time', '$content')", $db);
 		$sql = mysql_query("select id from latestmsg where id='$id'", $db);
 		if ($sql){
