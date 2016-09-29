@@ -32,6 +32,9 @@ define("WECHAT_APPSECRET", '2961d88b0b1dc7b50cfc4281aca3ea52');
 define("HTTP_ACCESSKEY", '3kmnn4jlnl');
 define("HTTP_APPNAME", 'xyhit');
 
+//调试配置
+define("DEBUG", true);
+
 ////-----引入系统所需类库-------------------
 ////引入错误消息类
 //include_once 'core/msg.lib.php';

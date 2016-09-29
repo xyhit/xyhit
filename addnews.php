@@ -1,60 +1,90 @@
 <?php
 namespace LaneWeChat;
-require ("./core/sendnewstomany.lib.php");
 use LaneWeChat\Core\SendNewsToMany;
 use LaneWeChat\Core\ResponseInitiative;
+use LaneWeChat\Core\SqlQuery;
+require ("./core/sqlquery.lib.php");
+require ("./core/sendnewstomany.lib.php");
+
+include_once __DIR__.'/config.php';
+
 // 当用户点击submit提交上传的文件时
 if(isset($_POST["submit"])){
-	// 创建SAE storage存储
-	$storage= new \SaeStorage();// 创建SAE storage存储对象
-	$domain = 'newspicture';// 这里的$domain对应得名字就是自己起的名字
-	$fileType = $_FILES["file"]["type"]; //被上传文件的类型
-	$title = $_POST["title"];
+	$title = $_POST["title"];            //新闻标题title，内容content，描述desc，是否主动群发active
 	$content = $_POST["content"];
 	$desc = $_POST["description"];
-	if ($_POST["active"] == "on"){
+	if (isset($_POST["active"]) && $_POST["active"] == "on"){
 		$active = true;
 	}
 	else{
 		$active = false;
 	}
-	$time = time();
-	$md_title = md5($title);
-	if (strlen($md_title) >= 10){
-		$id = (string)$time.(substr($md_title,-10));
-	}
-	else{
-		$id = (string)$time;
-	}
-	#连接sae时，系统提供默认参数，本地的话要自己填写主机、端口、用户、密码
-	include("conn.php");
-	if (mysql_query("insert into news(id, stringtime, title, content, description) values('".$id."','".(string)$time."','".$title."','".$content."','".$desc."')", $db) == false){
-		echo mysql_errno() . ": " . mysql_error(). "\n";
-	}else{
+	$time = date('Y-m-d H:i:s', time());
+	
+	$insert_array = array(
+		'title'=>$title,
+		'time'=>$time,
+		'description'=>$desc,
+		'content'=>$content
+	);
+	$re = SqlQuery::insert('news', $insert_array);        //将一条新闻插入数据库
+	print_r($re);
+	if ($re[0] == 0 && $re[1] >= 1){
 		echo "<p style='background:#7CBD55;border-radius: 0.3em;padding:5px;color:#fff;'>新闻上传成功！</p>";
 	}
-
-	if(($fileType=="image/gif") || ($fileType=="image/jpeg")||($fileType=="image/jpg")||($fileType=="image/png")){
-		$filename = $id."_".substr(md5($_FILES["file"]["name"]), -8).".png";
-		if($storage->fileExists($domain,$filename) == true) {// 判断文件是否已经存在
-			echo "<p style='background:#FCC9C4;border-radius: 0.3em;padding:5px;color:#fff;''>图片已存在,请重新上传!</p>";
-			}
-		else{
-			//$storage->putObjectFile($_FILES['uploaded']['tmp_name'], "test", "1.txt");
-			$storage->upload( $domain,$filename,$_FILES['file']['tmp_name']); 
-			echo "<p style='background:#7CBD55;border-radius: 0.3em;padding:5px;color:#fff;'>图片上传成功！</p>";
-			//echo "<script> window.location='showImage.php';</script>";
-			   
-			echo '<span style="white-space:pre">	</span>';}
-    }else{
-    	echo "<p style='background:#FCC9C4;border-radius: 0.3em;padding:5px;color:#fff;''>图片格数不正确,上传失败！</p>";
-    }
-	
-	$url = "http://xyhit-newspicture.stor.sinaapp.com/".$filename;
-	if (mysql_query("insert into picture(id, name, url) values('".$id."','".$filename."','".$url."')", $db) == false){
-		echo mysql_errno() . ": " . mysql_error(). "\n";
+	else if (DEBUG){
+		echo "Error: ".$re[0].", ".$re[1];
+		exit;
 	}
-	if ($active == true){
+	else{
+		echo "<p style='background:#7CBD55;border-radius: 0.3em;padding:5px;color:#fff;'>新闻上传失败！</p>";
+		exit;
+	}
+	
+	#处理上传的图片文件
+	$insert_array = array(
+		"news_id"=>$re[2]            //获取新闻id
+	);
+	$re = SqlQuery::insert('newspicture', $insert_array);
+	if ($re[0] == 0 && $re[1] >= 1){
+		echo "<p style='background:#7CBD55;border-radius: 0.3em;padding:5px;color:#fff;'>图片上传成功！</p>";
+	}
+	else if (DEBUG){
+		echo "Error: ".$re[0].", ".$re[1];
+		exit;
+	}
+	else{
+		echo "上传图片失败！";
+		exit;
+	}	
+	
+	$filename = $re[2];   //上传图片的名称，即id
+	$fileFolder = "newspicture/";   //图片保存在服务器上的路径
+	if ((($_FILES["file"]["type"] == "image/gif") || ($_FILES["file"]["type"] == "image/jpeg") || ($_FILES["file"]["type"] == "image/pjpeg") || ($_FILES["file"]["type"] == "image/png")) && ($_FILES["file"]["size"] < 2000000))
+	{
+		if ($_FILES["file"]["error"] > 0)
+		{
+			echo "Return Code: " . $_FILES["file"]["error"] . "<br />";
+		}
+		else
+		{
+			if (file_exists($fileFolder	. $filename))
+			{
+				echo $filename . " already exists. ";
+			}
+			else
+			{
+				move_uploaded_file($_FILES["file"]["tmp_name"], $fileFolder . $filename);
+			}
+		}
+	}
+	else
+	{
+		echo "Invalid file";
+	}	
+	
+	//如果主动发送按钮为开，则将新闻发送给注册用户
+	/*if ($active == true){
 		//return $responseInitiative->text('ocC_xvqBiYxo-z-3yHZ_UCNw_v9A', "hello world");
 		$newArr = array(
 					array(
@@ -85,7 +115,7 @@ if(isset($_POST["submit"])){
 				SendNewsToMany::send($useritem, $itemArray);
 			}
 		}
-	}
+	}*/
 }
 
 ?>
@@ -114,9 +144,9 @@ if(isset($_POST["submit"])){
 	<textarea style="font-size:20px; width:380px; height:300px;" size="20px" name="content" ></textarea>
 </div>
 <h3>图片编辑：</h3>
-	<input type="file" name="file" id="file" />
+	<input type="file" name="file" id="file"></input>
 	<input type="checkbox" name="active" >是否主动发送</input>
-	<input type="submit" value="Submit" name="submit"/>	
+	<input type="submit" value="Submit" name="submit"></input>	
 </form>
 
 </body>
