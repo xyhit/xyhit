@@ -1,27 +1,36 @@
 <?php
-	namespace LaneWeChat;
-	require ("./core/pagesplit.lib.php");
+	namespace LaneWeChat\FundModule;
+    use LaneWeChat\Core\SqlQuery;
+    
+	require ("../core/pagesplit.lib.php");
+    require (ROOT_DIR."/core/sqlquery.lib.php");
 	use LaneWeChat\Core\Mypage;
 	if (isset($_GET['code'])){
-		include ("./oauth_base.php");
+		include (ROOT_DIR."/oauth_base.php");
 		//echo $access_token['openid'];
 		$id = $access_token['openid'];
-		include ("./conn.php");
-		$sql = mysql_query("select name from user where id='$id'", $db);
-		if ($sql){
-			if (mysql_num_rows($sql) > 0){
-				$userinfo = mysql_fetch_array($sql);
-				$user_exist = true;
-				$name = $userinfo['name'];
-			}
-			else{
-				$user_exist = false;
-			}
-		}
-		else{
-			echo 'Could not run query: ' . mysql_error();
-			exit;
-		}
+		include (ROOT_DIR"/conn.php");
+        
+        $result = SqlQuery::query(
+            'user', 
+            array('name'), 
+            array(
+                'id'=>"$id"
+                )
+            );
+        if($result[0] == -1){
+            echo 'SQL Error: '.result[1];
+            exit;
+        }
+        else{
+            if(count($result[1]) < 1){
+                $user_exist = false;
+            } 
+            else{
+                $user_exist = true;
+                $name = $result[1][0]['name'];
+            }
+        }
 	}
 	else{
 		echo "NO-CODE-TYPE ERROR";
@@ -45,39 +54,49 @@
 		<div class='CSSTableGenerator'>
 		<table>
 				<?php
-					$sql = mysql_query("select DonaName, DonaMoney, DonationID, project, projecttime from donation order by DonaMoney desc", $db);
-					if (!$sql){
-						die('Error: ' . mysql_error());
-					}
-					
-					$num = mysql_num_rows($sql);
-					$pageobj = new Mypage($num, 20);
-					if ($num <= 0){
+                    $results = SqlQuery::query(
+                        'donation',
+                        array('name', 'money', 'id', 'projectname', 'time'),
+                        array(),
+                        'money',
+                        1
+                        );
+                    if($results[0] == -1){
+                        echo 'SQL Error'.$results[1];
+                        exit;
+                    }
+                    $num = count($results[1]);
+                    $pageobj = new Mypage($num, 20);
+                    if ($num <= 0){
 						echo "<h3 align='center'>暂无条目</h3>";
 					}
-					else{
-						mysql_data_seek($sql, ((int)$pageobj->page - 1) * 20);
-						$order = ((int)$pageobj->page - 1) * 20 + 1;
+                    else{
+                        $order = ((int)$pageobj->page - 1) * 20;
 						$counter=0;
-						
-						echo "<tr><td>序号</td><td>捐赠人</td><td>项目名称</td><td>金额</td><td>查看</td><td>流向</td></tr>";
-						while(($result = mysql_fetch_array($sql)) && $counter<20){
-					?>
-							<tr>
-								<td><?php echo $order ?></td>
-								<td><?php echo $result['DonaName'] ?></td>
-								<td><?= $result['project'] ?></td>
-								<td><?= $result['DonaMoney'] ?></td>
-								<td> <a href="./<?= "view_fund.php?id=".$result['DonationID'] ?>">详情</a></td>
-								<td> <a href="./<?= "fundoutyear.php?id=".$result['DonationID'] ?>">详情</a></td>
-							</tr>
-					<?php
-						$counter ++;
-						$order ++;
-						}
-					}
-				?>
-				
+                        echo "<tr><td>序号</td><td>捐赠人</td><td>项目名称</td><td>金额</td><td>查看</td><td>流向</td></tr>";
+                        while(counter < 20){
+                            try{
+                                $index = $order + $counter;
+                                $name = $results[1][$index]['name'];
+                                $projectname = $results[1][$index]['projectname'];
+                                $money = $results[1][$index]['money'];
+                                $fund_id = $results[1][$index]['id'];
+                                echo "
+                                <tr>
+                                    <td>$index</td>
+                                    <td>$name</td>
+                                    <td>$projectname</td>
+                                    <td>$money</td>
+                                    <td> <a href=\"./view_fund.php?id=$fund_id\">详情</a></td>
+                                    <td> <a href=\"./fundoutyear.php?id=$fund_id\">详情</a></td>
+                                </tr>
+                                ";
+                            }catch(Exception $e){
+                                break;
+                            }
+                            counter++;
+                        }
+                    }
 		</table>
 			<!--</form>-->
 		</div>
