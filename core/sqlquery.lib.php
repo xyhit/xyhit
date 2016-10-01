@@ -15,6 +15,7 @@ class SqlQuery {
 		try{
 			//echo $DSN;
 			$dbh = new \PDO($DSN, $USER, $PASSWORD);
+			$dbh->exec("SET NAMES 'utf8';");
 			$dbh->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 			return $dbh;
 		} catch(PDOException $e){
@@ -65,7 +66,7 @@ class SqlQuery {
 		}
 	}
 	
-	public static function query($tableName, $select_t, $condition){
+	public static function query($tableName, $select_t, $condition, $orderby="0", $desc=1){
 		//构造SQL查询语句
 		//用法： select $select_t from $tableName where $condition
 		/*
@@ -92,19 +93,23 @@ class SqlQuery {
 			$where .= " and $k=:$k";
 			$map[":$k"] = $v;
 		}
-		if(strlen($where)  <= 3){
-			$where = '1!=1';
+		if ($orderby == "0")
+			$text = "SELECT $select FROM $tableName WHERE $where";
+		else if ($desc == 1){
+			$text = "SELECT $select FROM $tableName WHERE $where order by($orderby) desc";
 		}
-		$text = "SELECT $select FROM $tableName WHERE $where";
+		else{
+			$text = "SELECT $select FROM $tableName WHERE $where order by($orderby) asc";
+		}
 		$dbh = SqlQuery::connect();
 		try{
-			$sth = $dbh->prepare($text, array(PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY));
+			$sth = $dbh->prepare($text, array(\PDO::ATTR_CURSOR => \PDO::CURSOR_FWDONLY));
 			$sth->execute($map);
 			$results = $sth->fetchAll();
 			$dbh = null;
 			//print_r($results);
 			return array(0, $results);
-		}catch (Exception $e){
+		}catch (\PDOException $e){
 			$dbh = null;
 			return array(-1, $e->getMessage());
 		}
@@ -156,7 +161,7 @@ class SqlQuery {
 			$dbh = null;
 			//print_r($results);
 			return array(0, $ret);
-		}catch (Exception $e){
+		}catch (\PDOException $e){
 			$dbh = null;
 			return array(-1, $e->getMessage());
 		}
@@ -195,7 +200,7 @@ class SqlQuery {
 			$dbh = null;
 			//print_r($ret);
 			return array(0, $ret);
-		}catch (Exception $e){
+		}catch (\PDOException $e){
 			$dbh = null;
 			return array(-1, $e->getMessage());
 		}

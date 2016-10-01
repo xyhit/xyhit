@@ -45,7 +45,6 @@
       //获取地址  
       private function setUrl() {  
          $_url = $_SERVER["REQUEST_URI"];
-		 return $_url;
          $_par = parse_url($_url);  
          if (isset($_par['query'])) {  
                 parse_str($_par['query'],$_query);  

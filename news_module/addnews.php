@@ -1,12 +1,11 @@
 <?php
-namespace LaneWeChat;
+namespace LaneWeChat\News_Module;
 use LaneWeChat\Core\SendNewsToMany;
 use LaneWeChat\Core\ResponseInitiative;
 use LaneWeChat\Core\SqlQuery;
-require ("./core/sqlquery.lib.php");
-require ("./core/sendnewstomany.lib.php");
 
-include_once __DIR__.'/config.php';
+include_once './config.php';
+require (ROOT_DIR."/core/sqlquery.lib.php");
 
 // 当用户点击submit提交上传的文件时
 if(isset($_POST["submit"])){
@@ -28,7 +27,6 @@ if(isset($_POST["submit"])){
 		'content'=>$content
 	);
 	$re = SqlQuery::insert('news', $insert_array);        //将一条新闻插入数据库
-	print_r($re);
 	if ($re[0] == 0 && $re[1] >= 1){
 		echo "<p style='background:#7CBD55;border-radius: 0.3em;padding:5px;color:#fff;'>新闻上传成功！</p>";
 	}
@@ -46,20 +44,18 @@ if(isset($_POST["submit"])){
 		"news_id"=>$re[2]            //获取新闻id
 	);
 	$re = SqlQuery::insert('newspicture', $insert_array);
-	if ($re[0] == 0 && $re[1] >= 1){
-		echo "<p style='background:#7CBD55;border-radius: 0.3em;padding:5px;color:#fff;'>图片上传成功！</p>";
+	if ($re[0] != 0 || $re[1] < 1){
+		if (DEBUG){
+			echo "Error: ".$re[0].", ".$re[1];
+			exit;
+		}
+		else{
+			echo "上传图片失败！";
+			exit;
+		}
 	}
-	else if (DEBUG){
-		echo "Error: ".$re[0].", ".$re[1];
-		exit;
-	}
-	else{
-		echo "上传图片失败！";
-		exit;
-	}	
 	
-	$filename = $re[2];   //上传图片的名称，即id
-	$fileFolder = "newspicture/";   //图片保存在服务器上的路径
+	$filename = $re[2].".png";   //上传图片的名称，即id
 	if ((($_FILES["file"]["type"] == "image/gif") || ($_FILES["file"]["type"] == "image/jpeg") || ($_FILES["file"]["type"] == "image/pjpeg") || ($_FILES["file"]["type"] == "image/png")) && ($_FILES["file"]["size"] < 2000000))
 	{
 		if ($_FILES["file"]["error"] > 0)
@@ -68,13 +64,14 @@ if(isset($_POST["submit"])){
 		}
 		else
 		{
-			if (file_exists($fileFolder	. $filename))
+			if (file_exists(PICTURE_SAVED_PATH . "/" . $filename))
 			{
 				echo $filename . " already exists. ";
 			}
 			else
 			{
-				move_uploaded_file($_FILES["file"]["tmp_name"], $fileFolder . $filename);
+				move_uploaded_file($_FILES["file"]["tmp_name"], PICTURE_SAVED_PATH . "/" . $filename);
+				echo "<p style='background:#7CBD55;border-radius: 0.3em;padding:5px;color:#fff;'>图片上传成功！</p>";
 			}
 		}
 	}

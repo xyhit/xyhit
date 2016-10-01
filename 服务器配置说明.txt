@@ -1,0 +1,1 @@
+php.ini中 date.timezone由UTC改为Asia/Shanghai
