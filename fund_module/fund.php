@@ -1,34 +1,25 @@
 <?php
-	namespace LaneWeChat\Fund_Module;
-	session_start();
+	namespace LaneWeChat\FundModule;
     use LaneWeChat\Core\SqlQuery;
-	use LaneWeChat\Core\Mypage;
-	include_once './config.php';
-	require (ROOT_DIR."/core/pagesplit.lib.php");
+    
+	require ("../core/pagesplit.lib.php");
     require (ROOT_DIR."/core/sqlquery.lib.php");
-	if (isset($_GET['code']) || (isset($_SESSION['FUND']) && $_SESSION['FUND'])){
-		if (isset($_SESSION['FUND']) && $_SESSION['FUND']){
-			$id = $_SESSION['openid'];
-		}
-		else{
-			session_destroy();
-			session_start();
-			include (ROOT_DIR."/oauth_base.php");
-			//echo $access_token['openid'];
-			$id = $access_token['openid'];
-			$_SESSION['FUND'] = true;
-			$_SESSION['openid'] = $id;
-		}
+	use LaneWeChat\Core\Mypage;
+	if (isset($_GET['code'])){
+		include (ROOT_DIR."/oauth_base.php");
+		//echo $access_token['openid'];
+		$id = $access_token['openid'];
+		include (ROOT_DIR"/conn.php");
         
         $result = SqlQuery::query(
             'user', 
             array('name'), 
             array(
-                'openid'=>"$id"
+                'id'=>"$id"
                 )
             );
         if($result[0] == -1){
-            echo 'SQL Error: '.$result[1];
+            echo 'SQL Error: '.result[1];
             exit;
         }
         else{
@@ -55,8 +46,8 @@
 		<!-- iphone设备中的safari私有meta标签，它表示：允许全屏模式浏览 -->
 		<meta name="apple-mobile-web-app-capable" content="yes">
         <title>捐赠信息</title>
-        <link rel="stylesheet" href="<?= ROOT_DIR ?>/static/weui/dist/style/weui.min.css"/>
-		<link rel="stylesheet" href="<?= ROOT_DIR ?>/static/weui/dist/style/CSSTableGenetor.css">
+        <link rel="stylesheet" href="./weui/dist/style/weui.min.css"/>
+		<link rel="stylesheet" href="./weui/dist/style/CSSTableGenetor.css">
 		
     </head>
     <body>
@@ -83,7 +74,7 @@
                         $order = ((int)$pageobj->page - 1) * 20;
 						$counter=0;
                         echo "<tr><td>序号</td><td>捐赠人</td><td>项目名称</td><td>金额</td><td>查看</td><td>流向</td></tr>";
-                        while($counter < 20){
+                        while(counter < 20){
                             try{
                                 $index = $order + $counter;
                                 $name = $results[1][$index]['name'];
@@ -103,10 +94,9 @@
                             }catch(Exception $e){
                                 break;
                             }
-                            $counter++;
+                            counter++;
                         }
                     }
-				?>
 		</table>
 			<!--</form>-->
 		</div>
@@ -151,7 +141,7 @@
 			<!--END dialog1-->
 			</div>
 		</body>
-	<script src="<?= ROOT_DIR ?>/static/jquery.min.js"></script>
+	<script src="./static/jquery.min.js"></script>
 	<script src="http://res.wx.qq.com/open/js/jweixin-1.0.0.js" type="text/javascript"></script>
 	<script type="text/javascript">
 	function showDialog(){
