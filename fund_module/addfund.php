@@ -1,16 +1,34 @@
 <?php
 	if (isset($_GET['id']) && isset($_GET['time'])){
+        //获取GET数据
 		$id = $_GET['id'];
 		$strtime = $_GET['time'];
 		$time = date("Y-m-d H:i:s", $strtime);
-		include "./conn.php";
-		$sql = mysql_query("select * from fund where id='$id' and time='$time'", $db);
-		if ($sql){
-			$result = mysql_fetch_array($sql);
-		}
-		else{
-			echo mysql_errno() . ": " . mysql_error(). "\n";
-		}
+		
+        //加载配置文件和SQL库
+        namespace LaneWeChat\Fund_Module;
+        use LaneWeChat\Core\SqlQuery;
+        include_once './config.php';
+        require (ROOT_DIR."/core/sqlquery.lib.php");
+        $ret = SqlQuery::query(
+            'fund',
+            array('id', 'openid', 'name', 'phone', 'email', 'time'),
+            array(
+                'id'=>$id,
+                'time'=>$time
+            )
+        );
+        if($ret[0] == -1){
+            if(DEBUG){
+                echo 'SQL Error: '.$ret[1].'<br/>';
+            }
+            else{
+                echo '数据库错误!<br/>';
+            }
+        }
+        else{
+            $result = $ret[1][0];
+        }
 	}
 ?>
 
@@ -323,7 +341,7 @@
 			// code for IE6, IE5
 			xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
 		}
-		xmlhttp.open("post", "http://1.xyhit.applinzi.com/processFundRecord.php", true);
+		xmlhttp.open("post", WECHAT_URL."/processFundRecord.php", true);
 		xmlhttp.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
 		xmlhttp.send(postStr);
 		
@@ -332,7 +350,7 @@
 				$("#toast").removeAttr("style");
 				var recv = xmlhttp.responseText;
 				setTimeout("document.getElementById('toast').setAttribute('style','display: none;')", 1000);
-				setTimeout("window.location.href='http://1.xyhit.applinzi.com/receivedMsg.php'", 1200);
+				setTimeout("window.location.href=\"".WECHAT_URL."/receivedMsg.php\"", 1200);
 			}
 		}
 	}
