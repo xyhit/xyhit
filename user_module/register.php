@@ -1,13 +1,13 @@
 <?php
-	namespace LaneWeChat;
+	namespace LaneWeChat\User_Module;
 	session_start();
-	require ("./core/accesstoken.lib.php");
-	require ("./core/popularize.lib.php");
-	require ("./core/accessjstoken.lib.php");
+	include_once ("./config.php");
+	require (ROOT_DIR."/core/accesstoken.lib.php");
+	require (ROOT_DIR."/core/popularize.lib.php");
+	require (ROOT_DIR."/core/accessjstoken.lib.php");
 	use LaneWeChat\Core\Popularize;
 	use LaneWeChat\Core\AccessJsToken;
 	
-	include("./conn.php");
 	$openid=$_POST['openid'];
 	$nickname=$_POST['nickname'];
 	if ($_POST['sex'] == 1)

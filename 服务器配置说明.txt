@@ -1,1 +1,6 @@
 php.ini中 date.timezone由UTC改为Asia/Shanghai
+
+php.ini中添加 extention=mysql_pdo.dll
+          extention=mysql_pdo_mysql.dll
+
+php.ini中修改allow_url_include = Off 为On  （windows主机，详情http://www.zoneself.org/2014/07/21/content_2665.html）

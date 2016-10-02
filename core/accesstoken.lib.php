@@ -18,7 +18,7 @@ class AccessToken{
      */
     public static function getAccessToken(){
         //在获取token的过程中先判断环境
-        if(Environment::isSae($_SERVER['HTTP_APPNAME'],$_SERVER['HTTP_ACCESSKEY']))
+        if(isset($_SERVER['HTTP_APPNAME']) && isset($_SERVER['HTTP_ACCESSKEY']) && Environment::isSae($_SERVER['HTTP_APPNAME'],$_SERVER['HTTP_ACCESSKEY']))
             return self::_getSae();
         //检测本地是否已经拥有access_token，并且检测access_token是否过期
         $accessToken = self::_checkAccessToken();
@@ -46,7 +46,7 @@ class AccessToken{
          *
          * 请将变量$accessTokenJson给存起来，这个变量是一个字符串
          */
-        $f = fopen('saemc://access_token', 'w+');
+        $f = fopen('../access_token', 'w+');
         fwrite($f, $accessTokenJson);
         fclose($f);
         return $accessToken;
@@ -60,8 +60,14 @@ class AccessToken{
     private static function _checkAccessToken(){
         //获取access_token。是上面的获取方法获取到后存起来的。
         //$accessToken = YourDatabase::get('access_token');
-        $data = file_get_contents('saemc://access_token');
-        $accessToken['value'] = $data;
+        $data = file_get_contents(WECHAT_URL.'/access_token');
+		if (isset($accessToken['value'])){
+			$accessToken['value'] = $data;
+		}
+		else{
+			return false;
+		}
+        
         if(!empty($accessToken['value'])){
             $accessToken = json_decode($accessToken['value'], true);
             if(time() - $accessToken['time'] < $accessToken['expires_in']-10){

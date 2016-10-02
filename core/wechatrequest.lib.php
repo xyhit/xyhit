@@ -1,6 +1,7 @@
 <?php
 namespace LaneWeChat\Core;
 include_once __DIR__.'/../config.php';
+defined('NEWS_PICTURE_ABS_PATH') or define('NEWS_PICTURE_ABS_PATH', "news_module/newspicture");
 /**
  * 处理请求
  * Created by Lane.
@@ -139,10 +140,10 @@ class WechatRequest{
 		$content = $request['content'];
 		include_once __DIR__.'/../sql/sql.php';
 		$time = date("Y-m-d H:i:s", time());
-        insert('think_formalmsg', array(
-            'userid'=,
+        /*insert('think_formalmsg', array(
+            'userid'=$id
 
-        ));
+        ));*/
 		mysql_query("insert into formalmsg(id, recv_send, time, content) values('$id', '$recv_send', '$time', '$content')", $db);
 		$sql = mysql_query("select id from latestmsg where id='$id'", $db);
 		if ($sql){
@@ -320,29 +321,67 @@ class WechatRequest{
         $eventKey = $request['eventkey'];
 		switch ($eventKey){
 			case 'lane_wechat_menu_3':   //拉取新闻事件
-				include("conn.php");
-				$sql = mysql_query("select id, title, description from news where stringtime=(select max(b.stringtime) from news as b)", $db);
-				if ($result == false){
-					echo mysql_errno() . ": " . mysql_error(). "\n";
+				$query_array = array(
+					"max(time)"
+				);
+				$condition_array = array();
+				$result = SqlQuery::query("news", $query_array, $condition_array);
+				if ($result[0] == 0 && count($result[1]) == 0){
+					echo "暂无新闻！";
 				}
-				$result=mysql_fetch_array($sql);
-				$id = $result[id];
-				$title = $result[title];
-				$desc = $result[description];
+				else if ($result[0] == -1){
+					echo "数据库查询出错！";
+				}
 				
-				$sql = mysql_query("select url from picture where id='".$id."'", $db);
-				if ($result == false){
-					echo mysql_errno() . ": " . mysql_error(). "\n";
+				$query_array = array(
+					"id",
+					"title",
+					"description"
+				);
+				$condition_array = array(
+					"time"=>$result[1][0][0]
+				);
+				$result = SqlQuery::query("news", $query_array, $condition_array);
+				if ($result[0] == 0 && count($result[1]) == 0){
+					echo "暂无新闻！";
 				}
-				$result=mysql_fetch_array($sql);
-				$url = $result[url];
-				mysql_close($db);
+				else if ($result[0] == -1){
+					echo "数据库查询出错！";
+				}
+
+				$id = $result[1][0]['id'];
+				$title = $result[1][0]['title'];
+				$desc = $result[1][0]['description'];
+				
+				$query_array = array(
+					"id"
+				);
+				$condition_array = array(
+					"news_id"=>$result[1][0]['id']
+				);
+				$picresult = SqlQuery::query("newspicture", $query_array, $condition_array);
+				if ($picresult[0] == 0 && count($picresult[1]) == 0){
+					if (DEBUG == true)
+						echo "暂无新闻！";
+					else{
+						$picture = "default.png";
+					}
+				}
+				else if ($picresult[0] == -1){
+					if (DEBUG == true)
+						echo "数据库查询出错！";
+					else{
+						$picture = "default.png";
+					}
+				}
+				$picture = $picresult[1][0]['id'].".png";
+				
 				$newArr = array(
 							array(
 								"title"=>$title,
 								"description"=>$desc,
-								"picurl"=>$url,
-								"url"=>"http://1.xyhit.applinzi.com/news.php?id=".(string)$id
+								"picurl"=>WECHAT_URL."/".NEWS_PICTURE_ABS_PATH."/".$picture,
+								"url"=>WECHAT_URL."/news_module/news.php?id=".(string)$id
 							)
 						);
 				$itemArray = array();
